@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
+	"github.com/angel-one/sfn-poller/sfnpoller/pollable"
+	mock_sfn "github.com/angel-one/sfn-poller/sfnpoller/pollable/_mocks/generated/sfn"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
-	"github.com/eltorocorp/sfn-poller/sfnpoller/cancellablecontext"
-	"github.com/eltorocorp/sfn-poller/sfnpoller/pollable"
-	mock_sfn "github.com/eltorocorp/sfn-poller/sfnpoller/pollable/_mocks/generated/sfn"
 	"github.com/golang/mock/gomock"
 	"github.com/stretchr/testify/assert"
 )

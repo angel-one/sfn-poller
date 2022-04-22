@@ -1,4 +1,4 @@
-//go:generate mockwrap -destination="_mocks/generated/pollabletask/mock_pollabletask.go" -package=mock_pollabletask github.com/eltorocorp/sfn-poller/sfnpoller/pollable/pollableiface PollableTask
+//go:generate mockwrap -destination="_mocks/generated/pollabletask/mock_pollabletask.go" -package=mock_pollabletask github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface PollableTask
 package sfnpoller_test
 
 import (
@@ -8,9 +8,8 @@ import (
 
 	"github.com/golang/mock/gomock"
 
-	"github.com/eltorocorp/sfn-poller/sfnpoller"
-	"github.com/eltorocorp/sfn-poller/sfnpoller/_mocks/generated/pollabletask"
-	"github.com/eltorocorp/sfn-poller/sfnpoller/cancellablecontext"
+	"github.com/angel-one/sfn-poller/sfnpoller"
+	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
 
 	"github.com/stretchr/testify/assert"
 )

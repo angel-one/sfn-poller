@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/eltorocorp/sfn-poller/sfnpoller/cancellablecontext"
+	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
 	"github.com/stretchr/testify/assert"
 )
 
