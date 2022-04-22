@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext/cancellablecontextiface"
-	"github.com/angel-one/sfn-poller/sfnpoller/internal/util"
 	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sfn"
