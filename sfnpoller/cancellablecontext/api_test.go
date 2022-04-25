@@ -2,9 +2,9 @@ package cancellablecontext_test
 
 import (
 	"context"
-	"sfnpoller/sfnpoller/cancellablecontext"
 	"testing"
 
+	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
 	"github.com/stretchr/testify/assert"
 )
 
