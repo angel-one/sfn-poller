@@ -23,17 +23,18 @@ type Task struct {
 	sfnAPI            sfniface.SFNAPI
 	started           chan struct{}
 	done              chan struct{}
-	logger            *logr.Logger
+	logger            logr.Logger
 }
 
 // NewTask returns a reference to a new pollable task.
-func NewTask(handlerFn interface{}, activityArn, workerName string, heartbeatInterval time.Duration, sfnAPI sfniface.SFNAPI) *Task {
+func NewTask(handlerFn interface{}, activityArn, workerName string, heartbeatInterval time.Duration, sfnAPI sfniface.SFNAPI, logger logr.Logger) *Task {
 	return &Task{
 		handlerFn:         handlerFn,
 		activityArn:       activityArn,
 		workerName:        workerName,
 		heartbeatInterval: heartbeatInterval,
 		sfnAPI:            sfnAPI,
+		logger:            logger,
 	}
 }
 
@@ -44,8 +45,8 @@ type ResourceInfo interface {
 }
 
 // NewTask2 returns a reference to a new pollable task using ResourceInfo.
-func NewTask2(handlerFn interface{}, resourceInfo ResourceInfo, heartbeatInterval time.Duration, sfnAPI sfniface.SFNAPI) *Task {
-	return NewTask(handlerFn, resourceInfo.ARN(), resourceInfo.ActivityName(), heartbeatInterval, sfnAPI)
+func NewTask2(handlerFn interface{}, resourceInfo ResourceInfo, heartbeatInterval time.Duration, sfnAPI sfniface.SFNAPI, logger logr.Logger) *Task {
+	return NewTask(handlerFn, resourceInfo.ARN(), resourceInfo.ActivityName(), heartbeatInterval, sfnAPI, logger)
 }
 
 // Start initializes polling for the task.
