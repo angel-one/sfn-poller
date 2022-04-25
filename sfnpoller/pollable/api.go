@@ -2,7 +2,6 @@
 package pollable
 
 import (
-	"log"
 	"reflect"
 	"time"
 
@@ -12,6 +11,7 @@ import (
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
+	"github.com/go-logr/logr"
 )
 
 // Task is an action that supports polling.
@@ -23,6 +23,7 @@ type Task struct {
 	sfnAPI            sfniface.SFNAPI
 	started           chan struct{}
 	done              chan struct{}
+	logger            *logr.Logger
 }
 
 // NewTask returns a reference to a new pollable task.
@@ -66,7 +67,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 
 			if ctxDone == true {
 				task.done <- struct{}{}
-				log.Println("Task execution done.")
+				task.logger.Info("Task execution done.")
 				break
 			}
 
@@ -75,15 +76,14 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				WorkerName:  aws.String(task.workerName),
 			})
 			if err != nil {
-				log.Println(err)
-				ctx.Cancel()
-				break
+				task.logger.Error(err, "Error getting activity task")
+				continue
 			}
 			if getActivityTaskOutput.TaskToken == nil {
 				continue
 			}
 
-			log.Printf("%v starting work on task token: %v...", task.workerName, *getActivityTaskOutput.TaskToken)
+			task.logger.Info("starting work on task token", "workerName", task.workerName, "token", *getActivityTaskOutput.TaskToken)
 
 			handler := reflect.ValueOf(task.handlerFn)
 			handlerType := reflect.TypeOf(task.handlerFn)
@@ -92,10 +92,8 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			ctxValue := reflect.ValueOf(ctx)
 			err = utils.Unmarshal(getActivityTaskOutput.Input, event.Interface())
 			if err != nil {
-				log.Println("An error occured while reporting a heartbeat to SFN!")
-				log.Println(err)
-				ctx.Cancel()
-				break
+				task.logger.Error(err, "An error occured while Unmarshalling Activity Input")
+				continue
 			}
 			args := []reflect.Value{
 				ctxValue,
@@ -103,10 +101,8 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 			out, err := task.keepAlive(handler.Call, args, getActivityTaskOutput.TaskToken, task.heartbeatInterval)
 			if err != nil {
-				log.Println("An error occured while reporting a heartbeat to SFN!")
-				log.Println(err)
-				ctx.Cancel()
-				break
+				task.logger.Error(err, "An error occured while reporting a heartbeat to SFN!")
+				continue
 			}
 
 			result := out[0].Interface()
@@ -115,36 +111,30 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				callErr = out[1].Interface().(error)
 			}
 			if callErr != nil {
-				log.Printf("%v sending failure notification to SFN... %s", task.workerName, *getActivityTaskOutput.TaskToken)
+				task.logger.Info("sending failure notification to SFN...", "workerName", task.workerName, "token", *getActivityTaskOutput.TaskToken)
 				_, err := task.sfnAPI.SendTaskFailure(&sfn.SendTaskFailureInput{
 					Cause:     aws.String(callErr.Error()),
 					Error:     aws.String(callErr.Error()),
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})
 				if err != nil {
-					log.Println("An error occured while reporting failure to SFN!")
-					log.Println(err)
-					ctx.Cancel()
-					break
+					task.logger.Error(err, "An error occured while reporting failure to SFN!")
+					continue
 				}
 			} else {
-				log.Printf("%v sending success notification to SFN... %s", task.workerName, *getActivityTaskOutput.TaskToken)
+				task.logger.Info("sending success notification to SFN...", "workerName", task.workerName, "token", *getActivityTaskOutput.TaskToken)
 				taskOutputJSON, err := utils.Marshal(result)
 				if err != nil {
-					log.Println("An error occured while reporting success to SFN!")
-					log.Println(err)
-					ctx.Cancel()
-					break
+					task.logger.Error(err, "An error occured while marshalling output to JSON")
+					continue
 				}
 				_, err = task.sfnAPI.SendTaskSuccess(&sfn.SendTaskSuccessInput{
 					Output:    taskOutputJSON,
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})
 				if err != nil {
-					log.Println("An error occured while reporting success to SFN!")
-					log.Println(err)
-					ctx.Cancel()
-					break
+					task.logger.Error(err, "An error occured while reporting success to SFN!")
+					continue
 				}
 			}
 		}
@@ -174,11 +164,12 @@ func (task *Task) keepAlive(handler func([]reflect.Value) []reflect.Value, args 
 		case result = <-resultSource:
 			return
 		case <-time.After(heartbeatInterval):
-			log.Println("Heartbeat")
+			task.logger.Info("Sending Heartbeat")
 			_, err = task.sfnAPI.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
 				TaskToken: taskToken,
 			})
 			if err != nil {
+				task.logger.Error(err, "An error occured while sending heartbeat to SFN!")
 				return
 			}
 		}

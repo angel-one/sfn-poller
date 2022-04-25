@@ -4,6 +4,7 @@ go 1.17
 
 require (
 	github.com/aws/aws-sdk-go v1.43.45
+	github.com/go-logr/logr v1.2.3
 	github.com/stretchr/testify v1.7.1
 )
 
