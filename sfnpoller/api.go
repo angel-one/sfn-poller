@@ -4,9 +4,9 @@ package sfnpoller
 import (
 	"context"
 	"log"
+	"sfnpoller/sfnpoller/cancellablecontext"
+	"sfnpoller/sfnpoller/pollable/pollableiface"
 
-	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
-	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
 	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
 )
 
