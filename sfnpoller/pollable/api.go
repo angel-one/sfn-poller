@@ -8,6 +8,7 @@ import (
 
 	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext/cancellablecontextiface"
 	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
+	"github.com/angel-one/sfn-poller/sfnpoller/utils"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sfn"
 	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
@@ -89,7 +90,13 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			eventType := handlerType.In(1)
 			event := reflect.New(eventType)
 			ctxValue := reflect.ValueOf(ctx)
-			util.MustUnmarshal(getActivityTaskOutput.Input, event.Interface())
+			err = utils.Unmarshal(getActivityTaskOutput.Input, event.Interface())
+			if err != nil {
+				log.Println("An error occured while reporting a heartbeat to SFN!")
+				log.Println(err)
+				ctx.Cancel()
+				break
+			}
 			args := []reflect.Value{
 				ctxValue,
 				event.Elem(),
@@ -122,8 +129,14 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				}
 			} else {
 				log.Printf("%v sending success notification to SFN... %s", task.workerName, *getActivityTaskOutput.TaskToken)
-				taskOutputJSON := util.MustMarshal(result)
-				_, err := task.sfnAPI.SendTaskSuccess(&sfn.SendTaskSuccessInput{
+				taskOutputJSON, err := utils.Marshal(result)
+				if err != nil {
+					log.Println("An error occured while reporting success to SFN!")
+					log.Println(err)
+					ctx.Cancel()
+					break
+				}
+				_, err = task.sfnAPI.SendTaskSuccess(&sfn.SendTaskSuccessInput{
 					Output:    taskOutputJSON,
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})

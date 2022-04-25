@@ -2,27 +2,21 @@ package utils
 
 import (
 	"encoding/json"
-	"log"
 )
 
-// MustMarshal attempts to marshal a struct to a json message.
-// This function logs then panics if an error occurs while marshalling.
-func MustMarshal(v interface{}) *string {
+func Marshal(v interface{}) (*string, error) {
 	b, err := json.Marshal(v)
 	if err != nil {
-		log.Println(err)
-		panic(err)
+		return nil, err
 	}
 	s := string(b)
-	return &s
+	return &s, nil
 }
 
-// MustUnmarshal attempts to unmarshal json to a struct.
-// This function logs then panics if an error occurs while unmarshalling.
-func MustUnmarshal(buf *string, v interface{}) {
+func Unmarshal(buf *string, v interface{}) error {
 	err := json.Unmarshal([]byte(*buf), v)
 	if err != nil {
-		log.Println(err)
-		panic(err)
+		return err
 	}
+	return nil
 }
