@@ -52,6 +52,9 @@ func (a *API) BeginPolling(parentCtx context.Context) *API {
 func (a *API) Done() <-chan struct{} {
 	a.done = make(chan struct{})
 	go func() {
+		for _, task := range a.registeredTasks {
+			task.Stop()
+		}
 		numberOfDoneTasks := 0
 		for i := 0; numberOfDoneTasks < len(a.registeredTasks); i++ {
 			<-a.registeredTasks[i].Done()
