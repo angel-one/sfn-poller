@@ -23,6 +23,7 @@ type Task struct {
 	sfnAPI            sfniface.SFNAPI
 	started           chan struct{}
 	done              chan struct{}
+	stopped           bool
 	logger            logr.Logger
 }
 
@@ -66,9 +67,9 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				ctxDone = false
 			}
 
-			if ctxDone == true {
+			if ctxDone == true || task.stopped {
 				task.done <- struct{}{}
-				task.logger.Info("Task execution done.")
+				task.logger.Info("Task execution done.", "workerName", task.workerName)
 				break
 			}
 
@@ -140,6 +141,11 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 		}
 	}()
+}
+
+func (task *Task) Stop() {
+	task.logger.Info("Stop Called", "workerName", task.workerName)
+	task.stopped = true
 }
 
 // Done returns a channel that blocks until the task is done polling.

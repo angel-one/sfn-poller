@@ -6,6 +6,7 @@ import "github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext/cancellable
 // PollableTask represents a thing that can poll.
 type PollableTask interface {
 	Start(cancellablecontextiface.Context)
+	Stop()
 	Started() <-chan struct{}
 	Done() <-chan struct{}
 }
