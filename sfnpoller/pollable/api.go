@@ -2,6 +2,8 @@
 package pollable
 
 import (
+	"context"
+	"github.com/google/uuid"
 	"reflect"
 	"time"
 
@@ -91,7 +93,9 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			handlerType := reflect.TypeOf(task.handlerFn)
 			eventType := handlerType.In(1)
 			event := reflect.New(eventType)
-			ctxValue := reflect.ValueOf(ctx)
+			logId, _ := uuid.NewUUID()
+			taskCtx := context.WithValue(ctx, "id", logId)
+			ctxValue := reflect.ValueOf(taskCtx)
 			err = utils.Unmarshal(getActivityTaskOutput.Input, event.Interface())
 			if err != nil {
 				task.logger.Error(err, "An error occured while Unmarshalling Activity Input")
