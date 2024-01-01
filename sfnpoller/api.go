@@ -7,13 +7,20 @@ import (
 
 	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
 	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
-	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
+	"github.com/aws/aws-sdk-go/service/sfn"
 )
+
+type SFNAPI interface {
+	GetActivityTask(*sfn.GetActivityTaskInput) (*sfn.GetActivityTaskOutput, error)
+	SendTaskFailure(*sfn.SendTaskFailureInput) (*sfn.SendTaskFailureOutput, error)
+	SendTaskHeartbeat(*sfn.SendTaskHeartbeatInput) (*sfn.SendTaskHeartbeatOutput, error)
+	SendTaskSuccess(*sfn.SendTaskSuccessInput) (*sfn.SendTaskSuccessOutput, error)
+}
 
 // API is the sfnpoller's API.
 type API struct {
 	registeredTasks []pollableiface.PollableTask
-	sfnAPI          sfniface.SFNAPI
+	sfnAPI          SFNAPI
 	done            chan struct{}
 }
 
