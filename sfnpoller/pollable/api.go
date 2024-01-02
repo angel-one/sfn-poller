@@ -3,16 +3,17 @@ package pollable
 
 import (
 	"context"
-	"github.com/google/uuid"
 	"reflect"
 	"time"
 
+	"github.com/google/uuid"
+
+	"github.com/angel-one/sfn-poller/sfnpoller"
 	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext/cancellablecontextiface"
 	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
 	"github.com/angel-one/sfn-poller/sfnpoller/utils"
 	"github.com/aws/aws-sdk-go/aws"
 	"github.com/aws/aws-sdk-go/service/sfn"
-	"github.com/aws/aws-sdk-go/service/sfn/sfniface"
 	"github.com/go-logr/logr"
 )
 
@@ -22,7 +23,7 @@ type Task struct {
 	activityArn       string
 	workerName        string
 	heartbeatInterval time.Duration
-	sfnAPI            sfniface.SFNAPI
+	sfnAPI            sfnpoller.SFNAPI
 	started           chan struct{}
 	done              chan struct{}
 	stopped           bool
@@ -30,7 +31,7 @@ type Task struct {
 }
 
 // NewTask returns a reference to a new pollable task.
-func NewTask(handlerFn interface{}, activityArn, workerName string, heartbeatInterval time.Duration, sfnAPI sfniface.SFNAPI, logger logr.Logger) *Task {
+func NewTask(handlerFn interface{}, activityArn, workerName string, heartbeatInterval time.Duration, sfnAPI sfnpoller.SFNAPI, logger logr.Logger) *Task {
 	return &Task{
 		handlerFn:         handlerFn,
 		activityArn:       activityArn,
@@ -48,7 +49,7 @@ type ResourceInfo interface {
 }
 
 // NewTask2 returns a reference to a new pollable task using ResourceInfo.
-func NewTask2(handlerFn interface{}, resourceInfo ResourceInfo, heartbeatInterval time.Duration, sfnAPI sfniface.SFNAPI, logger logr.Logger) *Task {
+func NewTask2(handlerFn interface{}, resourceInfo ResourceInfo, heartbeatInterval time.Duration, sfnAPI sfnpoller.SFNAPI, logger logr.Logger) *Task {
 	return NewTask(handlerFn, resourceInfo.ARN(), resourceInfo.ActivityName(), heartbeatInterval, sfnAPI, logger)
 }
 
