@@ -7,7 +7,7 @@ import (
 
 	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext"
 	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
-	"github.com/aws/aws-sdk-go/service/sfn"
+	"github.com/aws/aws-sdk-go-v2/service/sfn"
 )
 
 type SFNAPI interface {

@@ -12,8 +12,8 @@ import (
 	"github.com/angel-one/sfn-poller/sfnpoller/cancellablecontext/cancellablecontextiface"
 	"github.com/angel-one/sfn-poller/sfnpoller/pollable/pollableiface"
 	"github.com/angel-one/sfn-poller/sfnpoller/utils"
-	"github.com/aws/aws-sdk-go/aws"
-	"github.com/aws/aws-sdk-go/service/sfn"
+	"github.com/aws/aws-sdk-go-v2/aws"
+	"github.com/aws/aws-sdk-go-v2/service/sfn"
 	"github.com/go-logr/logr"
 )
 
