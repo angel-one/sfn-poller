@@ -76,7 +76,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				break
 			}
 
-			getActivityTaskOutput, err := task.sfnAPI.GetActivityTask(&sfn.GetActivityTaskInput{
+			getActivityTaskOutput, err := task.sfnAPI.GetActivityTask(ctx, &sfn.GetActivityTaskInput{
 				ActivityArn: aws.String(task.activityArn),
 				WorkerName:  aws.String(task.workerName),
 			})
@@ -119,7 +119,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 			if callErr != nil {
 				task.logger.Info("sending failure notification to SFN...", "workerName", task.workerName, "token", *getActivityTaskOutput.TaskToken)
-				_, err := task.sfnAPI.SendTaskFailure(&sfn.SendTaskFailureInput{
+				_, err := task.sfnAPI.SendTaskFailure(ctx, &sfn.SendTaskFailureInput{
 					Cause:     aws.String(callErr.Error()),
 					Error:     aws.String(callErr.Error()),
 					TaskToken: getActivityTaskOutput.TaskToken,
@@ -135,7 +135,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 					task.logger.Error(err, "An error occured while marshalling output to JSON")
 					continue
 				}
-				_, err = task.sfnAPI.SendTaskSuccess(&sfn.SendTaskSuccessInput{
+				_, err = task.sfnAPI.SendTaskSuccess(ctx, &sfn.SendTaskSuccessInput{
 					Output:    taskOutputJSON,
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})
@@ -177,7 +177,7 @@ func (task *Task) keepAlive(handler func([]reflect.Value) []reflect.Value, args 
 			return
 		case <-time.After(heartbeatInterval):
 			task.logger.Info("Sending Heartbeat")
-			_, err = task.sfnAPI.SendTaskHeartbeat(&sfn.SendTaskHeartbeatInput{
+			_, err = task.sfnAPI.SendTaskHeartbeat(context.Background(), &sfn.SendTaskHeartbeatInput{
 				TaskToken: taskToken,
 			})
 			if err != nil {

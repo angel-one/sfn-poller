@@ -11,10 +11,10 @@ import (
 )
 
 type SFNAPI interface {
-	GetActivityTask(*sfn.GetActivityTaskInput) (*sfn.GetActivityTaskOutput, error)
-	SendTaskFailure(*sfn.SendTaskFailureInput) (*sfn.SendTaskFailureOutput, error)
-	SendTaskHeartbeat(*sfn.SendTaskHeartbeatInput) (*sfn.SendTaskHeartbeatOutput, error)
-	SendTaskSuccess(*sfn.SendTaskSuccessInput) (*sfn.SendTaskSuccessOutput, error)
+	GetActivityTask(context.Context, *sfn.GetActivityTaskInput) (*sfn.GetActivityTaskOutput, error)
+	SendTaskFailure(context.Context, *sfn.SendTaskFailureInput) (*sfn.SendTaskFailureOutput, error)
+	SendTaskHeartbeat(context.Context, *sfn.SendTaskHeartbeatInput) (*sfn.SendTaskHeartbeatOutput, error)
+	SendTaskSuccess(context.Context, *sfn.SendTaskSuccessInput) (*sfn.SendTaskSuccessOutput, error)
 }
 
 // API is the sfnpoller's API.
