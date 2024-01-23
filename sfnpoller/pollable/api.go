@@ -70,7 +70,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				ctxDone = false
 			}
 
-			if ctxDone == true || task.stopped {
+			if ctxDone || task.stopped {
 				task.done <- struct{}{}
 				task.logger.Info("Task execution done.", "workerName", task.workerName)
 				break
@@ -106,7 +106,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				ctxValue,
 				event.Elem(),
 			}
-			out, err := task.keepAlive(handler.Call, args, getActivityTaskOutput.TaskToken, task.heartbeatInterval)
+			out, err := task.keepAlive(ctx, handler.Call, args, getActivityTaskOutput.TaskToken, task.heartbeatInterval)
 			if err != nil {
 				task.logger.Error(err, "An error occured while reporting a heartbeat to SFN!")
 				continue
@@ -165,7 +165,7 @@ func (task *Task) Started() <-chan struct{} {
 
 // keepAlive calls the handler function then periodicially sends heartbeat notifications to SFN until the handler function returns.
 // This method blocks until the handler returns.
-func (task *Task) keepAlive(handler func([]reflect.Value) []reflect.Value, args []reflect.Value, taskToken *string, heartbeatInterval time.Duration) (result []reflect.Value, err error) {
+func (task *Task) keepAlive(ctx context.Context, handler func([]reflect.Value) []reflect.Value, args []reflect.Value, taskToken *string, heartbeatInterval time.Duration) (result []reflect.Value, err error) {
 	resultSource := make(chan []reflect.Value, 1)
 	go func() {
 		resultSource <- handler(args)
@@ -177,7 +177,7 @@ func (task *Task) keepAlive(handler func([]reflect.Value) []reflect.Value, args 
 			return
 		case <-time.After(heartbeatInterval):
 			task.logger.Info("Sending Heartbeat")
-			_, err = task.sfnAPI.SendTaskHeartbeat(context.Background(), &sfn.SendTaskHeartbeatInput{
+			_, err = task.sfnAPI.SendTaskHeartbeat(ctx, &sfn.SendTaskHeartbeatInput{
 				TaskToken: taskToken,
 			})
 			if err != nil {

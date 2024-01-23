@@ -20,7 +20,6 @@ type SFNAPI interface {
 // API is the sfnpoller's API.
 type API struct {
 	registeredTasks []pollableiface.PollableTask
-	sfnAPI          SFNAPI
 	done            chan struct{}
 }
 
