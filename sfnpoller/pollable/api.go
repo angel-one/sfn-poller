@@ -81,7 +81,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				WorkerName:  aws.String(task.workerName),
 			})
 			if err != nil {
-				task.logger.Error(err, "Error getting activity task")
+				task.logger.Error(err, "Error getting activity task", "arn", task.activityArn)
 				continue
 			}
 			if getActivityTaskOutput.TaskToken == nil {
