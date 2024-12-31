@@ -81,7 +81,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				WorkerName:  aws.String(task.workerName),
 			})
 			if err != nil {
-				task.logger.Error(err, "Error getting activity task")
+				task.logger.Error(err, "Error getting activity task", "arn", task.activityArn)
 				continue
 			}
 			if getActivityTaskOutput.TaskToken == nil {
@@ -119,9 +119,10 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 			if callErr != nil {
 				task.logger.Info("sending failure notification to SFN...", "workerName", task.workerName, "token", *getActivityTaskOutput.TaskToken)
+				errString := truncateErrorIfRequired(callErr.Error())
 				_, err := task.sfnAPI.SendTaskFailure(ctx, &sfn.SendTaskFailureInput{
-					Cause:     aws.String(callErr.Error()),
-					Error:     aws.String(callErr.Error()),
+					Cause:     aws.String(errString),
+					Error:     aws.String(errString),
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})
 				if err != nil {
@@ -146,6 +147,13 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 		}
 	}()
+}
+
+func truncateErrorIfRequired(errString string) string {
+	if len(errString) > 256 {
+		errString = errString[:253] + "..."
+	}
+	return errString
 }
 
 func (task *Task) Stop() {
