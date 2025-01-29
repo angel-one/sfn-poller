@@ -28,6 +28,7 @@ type Task struct {
 	done              chan struct{}
 	stopped           bool
 	logger            logr.Logger
+	rateLimiter       RateLimiter
 }
 
 // NewTask returns a reference to a new pollable task.
@@ -39,6 +40,19 @@ func NewTask(handlerFn interface{}, activityArn, workerName string, heartbeatInt
 		heartbeatInterval: heartbeatInterval,
 		sfnAPI:            sfnAPI,
 		logger:            logger,
+	}
+}
+
+// NewTaskWithRateLimiting returns a reference to a new pollable task.
+func NewTaskWithRateLimiting(handlerFn interface{}, activityArn, workerName string, heartbeatInterval time.Duration, sfnAPI sfnpoller.SFNAPI, logger logr.Logger, rateLimiter RateLimiter) *Task {
+	return &Task{
+		handlerFn:         handlerFn,
+		activityArn:       activityArn,
+		workerName:        workerName,
+		heartbeatInterval: heartbeatInterval,
+		sfnAPI:            sfnAPI,
+		logger:            logger,
+		rateLimiter:       rateLimiter,
 	}
 }
 
@@ -76,15 +90,30 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				break
 			}
 
+			var (
+				rateLimiterToken string
+				err              error
+			)
+			if task.rateLimiter != nil {
+				rateLimiterToken, err = task.rateLimiter.GetToken(ctx, task.activityArn)
+				if err == nil && rateLimiterToken == "" {
+					task.logger.Info("did not get token", "workerName", task.workerName)
+					time.Sleep(100 * time.Millisecond)
+					continue
+				}
+			}
+
 			getActivityTaskOutput, err := task.sfnAPI.GetActivityTask(ctx, &sfn.GetActivityTaskInput{
 				ActivityArn: aws.String(task.activityArn),
 				WorkerName:  aws.String(task.workerName),
 			})
 			if err != nil {
 				task.logger.Error(err, "Error getting activity task", "arn", task.activityArn)
+				_ = returnTokenIfRequired(ctx, task, rateLimiterToken)
 				continue
 			}
 			if getActivityTaskOutput.TaskToken == nil {
+				_ = returnTokenIfRequired(ctx, task, rateLimiterToken)
 				continue
 			}
 
@@ -147,6 +176,17 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 		}
 	}()
+}
+
+func returnTokenIfRequired(ctx context.Context, task *Task, rateLimiterToken string) error {
+	if rateLimiterToken != "" {
+		err := task.rateLimiter.ReturnToken(ctx, rateLimiterToken)
+		if err != nil {
+			task.logger.Info("error while returning token", "workerName", task.workerName)
+			return err
+		}
+	}
+	return nil
 }
 
 func truncateErrorIfRequired(errString string) string {
