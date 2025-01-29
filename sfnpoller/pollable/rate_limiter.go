@@ -23,13 +23,17 @@ local count = redis.call("incr", key)
 if count > max then
 	redis.call("incrby", key, -1)
 end
-redis.call("expire", key, ARGV[1])
-return count
+redis.call("expire", key, 10)
+return key
 `
 
 const returnTokenRedisScript = `
 local key = KEYS[1]
-redis.call("expire", key, ARGV[1])
+local count = redis.call("get", key)
+if count < 0 then
+	redis.call("set", key, 0)
+end
+redis.call("expire", key, 10)
 return count
 `
 
