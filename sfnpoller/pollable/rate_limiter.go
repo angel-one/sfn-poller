@@ -22,6 +22,7 @@ local max = tonumber(ARGV[1])
 local count = redis.call("incr", key)
 if count > max then
 	redis.call("incrby", key, -1)
+	return nil
 end
 redis.call("expire", key, 10)
 return key
