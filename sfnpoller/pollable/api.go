@@ -81,7 +81,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 				WorkerName:  aws.String(task.workerName),
 			})
 			if err != nil {
-				task.logger.Error(err, "Error getting activity task", "arn", task.activityArn)
+				task.logger.Error(err, "Error getting activity task", "arn", task.activityArn, "workerName", task.workerName)
 				continue
 			}
 			if getActivityTaskOutput.TaskToken == nil {
@@ -99,7 +99,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			ctxValue := reflect.ValueOf(taskCtx)
 			err = utils.Unmarshal(getActivityTaskOutput.Input, event.Interface())
 			if err != nil {
-				task.logger.Error(err, "An error occured while Unmarshalling Activity Input")
+				task.logger.Error(err, "An error occured while Unmarshalling Activity Input", "workerName", task.workerName)
 				continue
 			}
 			args := []reflect.Value{
@@ -108,7 +108,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 			}
 			out, err := task.keepAlive(ctx, handler.Call, args, getActivityTaskOutput.TaskToken, task.heartbeatInterval)
 			if err != nil {
-				task.logger.Error(err, "An error occured while reporting a heartbeat to SFN!")
+				task.logger.Error(err, "An error occurred while reporting a heartbeat to SFN!", "workerName", task.workerName)
 				continue
 			}
 
@@ -126,14 +126,14 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})
 				if err != nil {
-					task.logger.Error(err, "An error occured while reporting failure to SFN!")
+					task.logger.Error(err, "An error occurred while reporting failure to SFN!", "workerName", task.workerName)
 					continue
 				}
 			} else {
 				task.logger.Info("sending success notification to SFN...", "workerName", task.workerName, "token", *getActivityTaskOutput.TaskToken)
 				taskOutputJSON, err := utils.Marshal(result)
 				if err != nil {
-					task.logger.Error(err, "An error occured while marshalling output to JSON")
+					task.logger.Error(err, "An error occurred while marshalling output to JSON", "workerName", task.workerName)
 					continue
 				}
 				_, err = task.sfnAPI.SendTaskSuccess(ctx, &sfn.SendTaskSuccessInput{
@@ -141,7 +141,7 @@ func (task *Task) Start(ctx cancellablecontextiface.Context) {
 					TaskToken: getActivityTaskOutput.TaskToken,
 				})
 				if err != nil {
-					task.logger.Error(err, "An error occured while reporting success to SFN!")
+					task.logger.Error(err, "An error occurred while reporting success to SFN!", "workerName", task.workerName)
 					continue
 				}
 			}
@@ -189,7 +189,7 @@ func (task *Task) keepAlive(ctx context.Context, handler func([]reflect.Value) [
 				TaskToken: taskToken,
 			})
 			if err != nil {
-				task.logger.Error(err, "An error occured while sending heartbeat to SFN!")
+				task.logger.Error(err, "An error occurred while sending heartbeat to SFN!", "workerName", task.workerName)
 				return
 			}
 		}
